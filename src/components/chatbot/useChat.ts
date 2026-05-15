@@ -321,7 +321,18 @@ export function useChat() {
       // Otherwise — let the AI respond
       const reply = await callAi();
       const snapshot = parseSnapshot(reply);
-      const cleanReply = snapshot ? stripSnapshotMarkers(reply) : reply;
+      let cleanReply = snapshot ? stripSnapshotMarkers(reply) : reply;
+
+      // After FAQ about Hivericks, append Q1 to the same message
+      if (phase === "greeting") {
+        const lower = trimmed.toLowerCase();
+        const askedFaq = lower.includes("about hivericks") || lower.includes("technologies we use") || lower.includes("past projects");
+        if (askedFaq) {
+          setPhase("scope_check");
+          setQuestionCount(1);
+          cleanReply = (cleanReply || "") + "\n\n" + SCOPE_OPENER;
+        }
+      }
 
       let chips: Chip[] | undefined;
       if (snapshot) {
@@ -332,18 +343,6 @@ export function useChat() {
       }
 
       addBot(cleanReply || (snapshot ? "Here's what I've put together:" : ""), chips, snapshot ?? undefined);
-
-      // After answering a FAQ about Hivericks, pivot naturally to feasibility check
-      if (phase === "greeting") {
-        const lower = trimmed.toLowerCase();
-        const askedFaq = lower.includes("about hivericks") || lower.includes("technologies we use") || lower.includes("past projects");
-        if (askedFaq) {
-          setPhase("scope_check");
-          setQuestionCount(1);
-          apiHistory.current.push({ role: "assistant", content: SCOPE_OPENER });
-          setTimeout(() => addBot(SCOPE_OPENER), 600);
-        }
-      }
 
       if (phase === "scope_check" && questionCount < 4) {
         setQuestionCount((c) => c + 1);
