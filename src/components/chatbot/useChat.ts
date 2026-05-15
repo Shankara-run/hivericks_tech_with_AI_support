@@ -3,60 +3,21 @@ import { chatStore } from "./chatStore";
 
 export type ChatMessageId = string;
 
-export type SnapshotData = {
-  idea: string;
-  domain: string;
-  problem: string;
-  status: string;
-  scale: string;
-  tech: string;
-};
-
 export type ChatMessage = {
   id: ChatMessageId;
   role: "user" | "assistant";
   content: string;
-  snapshot?: SnapshotData;
   chips?: Chip[];
   ts: number;
 };
 
 export type Chip = {
   label: string;
-  /** if true, do not echo the chip as a user message — handle silently */
   silent?: boolean;
-  action?: "scope_check" | "snapshot_confirm" | "snapshot_adjust" | "close";
+  action?: "scope_check" | "close";
 };
 
-type Phase =
-  | "greeting"
-  | "faq"
-  | "scope_check"
-  | "idea_funnel"
-  | "lead_capture_name"
-  | "lead_capture_email"
-  | "contact_form_fname"
-  | "contact_form_lname"
-  | "contact_form_email"
-  | "contact_form_phone"
-  | "contact_form_subject"
-  | "contact_form_message"
-  | "closing";
-
-const SCOPE_KEYWORDS = [
-  "idea",
-  "concept",
-  "build",
-  "create",
-  "possible",
-  "can you make",
-  "thinking of",
-  "i have",
-  "startup",
-  "develop",
-  "prototype",
-  "want to",
-];
+type Phase = "greeting" | "scope_check" | "contact_form_fname" | "contact_form_lname" | "contact_form_email" | "contact_form_phone" | "contact_form_subject" | "contact_form_message" | "closing";
 
 const GOODBYE_KEYWORDS = [
   "thanks", "thank you", "goodbye", "bye", "that's all", "thats all",
@@ -93,42 +54,13 @@ function uid() {
   return Math.random().toString(36).slice(2, 10);
 }
 
-function detectScopeKeywords(text: string) {
-  const lower = text.toLowerCase();
-  return SCOPE_KEYWORDS.some((k) => lower.includes(k));
-}
-
 function detectGoodbye(text: string) {
   const lower = text.toLowerCase().trim();
   return GOODBYE_KEYWORDS.some((k) => {
     if (k === lower) return true;
-    // multi-word phrases can match at start
     if (k.includes(" ") && lower.startsWith(k)) return true;
     return false;
   });
-}
-
-function parseSnapshot(text: string): SnapshotData | null {
-  const m = text.match(/---CONCEPT SNAPSHOT---([\s\S]*?)---END SNAPSHOT---/);
-  if (!m) return null;
-  const block = m[1];
-  const get = (label: string) => {
-    const re = new RegExp(`${label}\\s*:\\s*(.+)`, "i");
-    const r = block.match(re);
-    return r ? r[1].trim() : "";
-  };
-  return {
-    idea: get("Idea"),
-    domain: get("Domain"),
-    problem: get("Problem"),
-    status: get("Current status"),
-    scale: get("Scale"),
-    tech: get("Tech direction"),
-  };
-}
-
-function stripSnapshotMarkers(text: string) {
-  return text.replace(/---CONCEPT SNAPSHOT---[\s\S]*?---END SNAPSHOT---/g, "").trim();
 }
 
 export function useChat() {
@@ -137,18 +69,16 @@ export function useChat() {
   const [loading, setLoading] = useState(false);
   const [questionCount, setQuestionCount] = useState(0);
   const initialized = useRef(false);
-  const faqCount = useRef(0);
   const leadName = useRef<string | null>(null);
 
   const apiHistory = useRef<{ role: "user" | "assistant"; content: string }[]>([]);
 
-  const addBot = useCallback((content: string, chips?: Chip[], snapshot?: SnapshotData) => {
+  const addBot = useCallback((content: string, chips?: Chip[]) => {
     const msg: ChatMessage = {
       id: uid(),
       role: "assistant",
       content,
       chips,
-      snapshot,
       ts: Date.now(),
     };
     setMessages((m) => [...m, msg]);
@@ -161,7 +91,6 @@ export function useChat() {
     apiHistory.current.push({ role: "user", content });
   }, []);
 
-  // greeting on first open OR scope-check direct
   useEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
@@ -218,13 +147,9 @@ export function useChat() {
     }
   }, []);
 
-  const callAi = useCallback(async (extraSystemNudge?: string) => {
+  const callAi = useCallback(async () => {
     setLoading(true);
     try {
-      const messagesPayload = [...apiHistory.current];
-      if (extraSystemNudge) {
-        messagesPayload.unshift({ role: "assistant", content: extraSystemNudge });
-      }
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -246,36 +171,9 @@ export function useChat() {
 
       addUser(trimmed);
 
-      // Closing keyword check
-      if (detectGoodbye(trimmed) && phase !== "lead_capture_name" && phase !== "lead_capture_email" && !phase.startsWith("contact_form")) {
+      if (detectGoodbye(trimmed) && !phase.startsWith("contact_form")) {
         setPhase("closing");
         setTimeout(() => addBot(CLOSING_CONTENT), 400);
-        return;
-      }
-
-      // Lead capture flow handled locally (no AI needed)
-      if (phase === "lead_capture_name") {
-        leadName.current = trimmed;
-        setPhase("lead_capture_email");
-        setTimeout(
-          () =>
-            addBot(
-              `Nice to meet you, ${trimmed}! 😊\n\nAnd your email address — so the team can reach you directly?`,
-            ),
-          500,
-        );
-        return;
-      }
-      if (phase === "lead_capture_email") {
-        const name = leadName.current ?? "there";
-        setPhase("closing");
-        setTimeout(
-          () =>
-            addBot(
-              `You're all set, ${name}.\n\nYour Concept Snapshot has been received. Our team will review it and reach out to you at ${trimmed} within 2-3 working days.\n\nThank you for exploring this with Hivericks.`,
-            ),
-          500,
-        );
         return;
       }
 
@@ -298,10 +196,7 @@ export function useChat() {
       }
       if (phase === "contact_form_phone") {
         setPhase("contact_form_subject");
-        setTimeout(
-          () => addBot(`Thanks! What's the subject or type of inquiry you'd like to discuss?`),
-          400,
-        );
+        setTimeout(() => addBot(`Thanks! What's the subject or type of inquiry you'd like to discuss?`), 400);
         return;
       }
       if (phase === "contact_form_subject") {
@@ -312,25 +207,16 @@ export function useChat() {
       if (phase === "contact_form_message") {
         setPhase("closing");
         setTimeout(
-          () =>
-            addBot(
-              `Thank you! Your message has been received. Our team will review it and get back to you within 2-3 working days.\n\nWe appreciate you reaching out to Hivericks!`,
-            ),
+          () => addBot(`Thank you! Your message has been received. Our team will review it and get back to you within 2-3 working days.\n\nWe appreciate you reaching out to Hivericks!`),
           500,
         );
         return;
       }
 
-      // Detect scope keywords from FAQ/greeting → switch to scope check
-      if ((phase === "greeting" || phase === "faq") && detectScopeKeywords(trimmed)) {
-        setPhase("scope_check");
-        setQuestionCount(1);
-      }
-
-      // Otherwise — let the AI respond
+      // Let the AI respond
       const reply = await callAi();
-      const snapshot = parseSnapshot(reply);
-      let cleanReply = snapshot ? stripSnapshotMarkers(reply) : reply;
+      let cleanReply = reply || "";
+      let chips: Chip[] | undefined;
 
       // After FAQ about Hivericks, append Q1 to the same message
       if (phase === "greeting") {
@@ -339,24 +225,15 @@ export function useChat() {
         if (askedFaq) {
           setPhase("scope_check");
           setQuestionCount(1);
-          cleanReply = (cleanReply || "") + "\n\n" + SCOPE_OPENER;
+          cleanReply = cleanReply + "\n\n" + SCOPE_OPENER;
         }
       }
 
-      let chips: Chip[] | undefined;
-      if (snapshot) {
-        chips = [
-          { label: "The snapshot looks accurate", silent: true, action: "snapshot_confirm" },
-          { label: "I'd like to make changes", silent: true, action: "snapshot_adjust" },
-        ];
-      }
-
-      addBot(cleanReply || (snapshot ? "Here's what I've put together:" : ""), chips, snapshot ?? undefined);
+      addBot(cleanReply, chips);
 
       if (phase === "scope_check" && questionCount < 4) {
         setQuestionCount((c) => c + 1);
       }
-      if (phase === "faq") faqCount.current += 1;
     },
     [addBot, addUser, callAi, loading, phase, questionCount],
   );
@@ -390,27 +267,6 @@ export function useChat() {
         );
         return;
       }
-      if (chip.action === "snapshot_confirm") {
-        setPhase("lead_capture_name");
-        setMessages((m) =>
-          m.map((msg, i) => (i === m.length - 1 ? { ...msg, chips: undefined } : msg)),
-        );
-        const botText = `Brilliant! Our team would love to review this.\n\nJust two quick things so they can reach you:\n\nWhat's your name?`;
-        apiHistory.current.push({ role: "user", content: "The snapshot looks accurate." });
-        apiHistory.current.push({ role: "assistant", content: botText });
-        setTimeout(() => addBot(botText), 400);
-        return;
-      }
-      if (chip.action === "snapshot_adjust") {
-        setMessages((m) =>
-          m.map((msg, i) => (i === m.length - 1 ? { ...msg, chips: undefined } : msg)),
-        );
-        const botText = `No problem! What would you like to tweak? Just tell me what to change and I'll update the snapshot.`;
-        apiHistory.current.push({ role: "user", content: "I'd like to make changes." });
-        apiHistory.current.push({ role: "assistant", content: botText });
-        setTimeout(() => addBot(botText), 400);
-        return;
-      }
       if (chip.action === "close") {
         setMessages((m) =>
           m.map((msg, i) => (i === m.length - 1 ? { ...msg, chips: undefined } : msg)),
@@ -419,7 +275,6 @@ export function useChat() {
         setTimeout(() => addBot(CLOSING_CONTENT), 300);
         return;
       }
-      // Default — send chip label as user message
       void sendUserMessage(chip.label);
     },
     [addBot, sendUserMessage],
