@@ -58,7 +58,11 @@ const SCOPE_KEYWORDS = [
   "want to",
 ];
 
-const GOODBYE_KEYWORDS = ["thanks", "thank you", "goodbye", "bye", "that's all", "i'm good", "im good", "all good"];
+const GOODBYE_KEYWORDS = [
+  "thanks", "thank you", "goodbye", "bye", "that's all", "thats all",
+  "i'm good", "im good", "all good", "okay", "ok", "no", "nah", "nope",
+  "nothing else", "that's it", "thats it", "i'm done", "im done",
+];
 
 const GREETING_CONTENT = `Hey there! 👋 I'm Hive — Hivericks' virtual teammate.
 
@@ -96,7 +100,12 @@ function detectScopeKeywords(text: string) {
 
 function detectGoodbye(text: string) {
   const lower = text.toLowerCase().trim();
-  return GOODBYE_KEYWORDS.some((k) => lower === k || lower.startsWith(k));
+  return GOODBYE_KEYWORDS.some((k) => {
+    if (k === lower) return true;
+    // multi-word phrases can match at start
+    if (k.includes(" ") && lower.startsWith(k)) return true;
+    return false;
+  });
 }
 
 function parseSnapshot(text: string): SnapshotData | null {
