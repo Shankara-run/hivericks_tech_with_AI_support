@@ -1,16 +1,11 @@
-import { create } from "zustand";
+import { useSyncExternalStore } from "react";
 
 type State = {
   open: boolean;
   pendingScopeCheck: boolean;
-  setOpen: (v: boolean) => void;
-  openInScopeCheck: () => void;
 };
 
-// Tiny zustand-like store without dep — use minimal subscription
-import { useSyncExternalStore } from "react";
-
-let state = {
+let state: State = {
   open: false,
   pendingScopeCheck: false,
 };
@@ -20,8 +15,7 @@ const emit = () => listeners.forEach((l) => l());
 export const chatStore = {
   get: () => state,
   setOpen(v: boolean) {
-    state = { ...state, open: v };
-    if (!v) state = { ...state, pendingScopeCheck: false };
+    state = { open: v, pendingScopeCheck: v ? state.pendingScopeCheck : false };
     emit();
   },
   openInScopeCheck() {
@@ -36,10 +30,6 @@ export const chatStore = {
     }
     return false;
   },
-  subscribe(l: () => void) {
-    listeners.add(l);
-    return () => listeners.delete(l);
-  },
 };
 
 export function useChatStore() {
@@ -52,8 +42,3 @@ export function useChatStore() {
     () => state,
   );
 }
-
-// dummy export to satisfy zustand import line above (we don't actually use it)
-const create = (() => null) as never;
-export { create };
-export type { State };
