@@ -88,12 +88,7 @@ export const Route = createFileRoute("/api/chat")({
             return Response.json({ reply: ERROR_REPLIES.rate }, { status: 200 });
           }
           if (!upstream.ok) {
-            const errBody = await upstream.text().catch(() => "(unreadable)");
-            console.error("[/api/chat] OpenAI error", upstream.status, errBody);
-            return Response.json(
-              { reply: `OpenAI returned ${upstream.status}: ${errBody.slice(0, 200)}` },
-              { status: 200 },
-            );
+            return Response.json({ reply: ERROR_REPLIES.generic }, { status: 200 });
           }
 
           const data = (await upstream.json()) as {
