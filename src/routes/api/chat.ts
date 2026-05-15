@@ -77,7 +77,7 @@ export const Route = createFileRoute("/api/chat")({
               body: JSON.stringify({
                 model: "gpt-5-nano",
                 messages,
-                max_completion_tokens: 4096,
+                max_completion_tokens: 2048,
               }),
               signal: controller.signal,
             },

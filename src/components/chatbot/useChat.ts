@@ -99,7 +99,7 @@ export function useChat() {
     const wantsContact = chatStore.consumePendingContactForm();
     if (wantsScope) {
       setPhase("scope_check");
-      setQuestionCount(1);
+      setQuestionCount(0);
       apiHistory.current.push({ role: "user", content: "I'd like to check project feasibility." });
       apiHistory.current.push({ role: "assistant", content: SCOPE_OPENER });
       setTimeout(() => {
@@ -213,6 +213,11 @@ export function useChat() {
         return;
       }
 
+      // Increment bar when user submits an answer in scope_check
+      if (phase === "scope_check" && questionCount < 4) {
+        setQuestionCount((c) => c + 1);
+      }
+
       // Let the AI respond
       const reply = await callAi();
       let cleanReply = reply || "";
@@ -224,16 +229,12 @@ export function useChat() {
         const askedFaq = lower.includes("about hivericks") || lower.includes("technologies we use") || lower.includes("past projects");
         if (askedFaq) {
           setPhase("scope_check");
-          setQuestionCount(1);
+          setQuestionCount(0);
           cleanReply = cleanReply + "\n\n" + SCOPE_OPENER;
         }
       }
 
       addBot(cleanReply, chips);
-
-      if (phase === "scope_check" && questionCount < 4) {
-        setQuestionCount((c) => c + 1);
-      }
     },
     [addBot, addUser, callAi, loading, phase, questionCount],
   );
@@ -242,7 +243,7 @@ export function useChat() {
     (chip: Chip) => {
       if (chip.action === "scope_check") {
         setPhase("scope_check");
-        setQuestionCount(1);
+        setQuestionCount(0);
         setMessages((m) =>
           m.map((msg, i) => (i === m.length - 1 ? { ...msg, chips: undefined } : msg)),
         );

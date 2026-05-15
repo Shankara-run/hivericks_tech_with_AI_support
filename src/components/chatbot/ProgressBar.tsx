@@ -24,7 +24,7 @@ export function ProgressBar({ count }: Props) {
     }
   }, [count]);
 
-  if (count >= 4 && bulbShown.current) {
+  if (count <= 0 || (count >= 4 && bulbShown.current)) {
     return null;
   }
 
