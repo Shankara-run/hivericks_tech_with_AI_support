@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { ChatHeader } from "./ChatHeader";
 import { MessageList } from "./MessageList";
 import { InputArea } from "./InputArea";
+import { ProgressBar } from "./ProgressBar";
 import { useChat } from "./useChat";
 
 type Props = {
@@ -55,11 +56,12 @@ export function ChatPanel({ open, onClose }: Props) {
 }
 
 function PanelInner({ onClose }: { onClose: () => void }) {
-  const { messages, sendUserMessage, clickChip, loading } = useChat();
+  const { messages, sendUserMessage, clickChip, loading, questionCount } = useChat();
   return (
     <>
       <ChatHeader onClose={onClose} />
       <MessageList messages={messages} loading={loading} onChip={clickChip} />
+      <ProgressBar count={questionCount} />
       <InputArea onSend={sendUserMessage} disabled={loading} />
       <div
         className="text-center text-[11px] py-1.5 border-t"

@@ -48,21 +48,21 @@
 :root {
   --radius: 0.5rem;
 
-  --background: #0a0a0a;
-  --surface: #141414;
-  --surface-2: #1c1c1c;
-  --border: #2a2a2a;
-  --input: #1c1c1c;
+  --background: #ffffff;
+  --surface: #f9fafb;
+  --surface-2: #f3f4f6;
+  --border: #e5e7eb;
+  --input: #f3f4f6;
   --ring: #48a0f8;
 
   --brand: #48a0f8;
   --brand-dim: #2a7ad4;
   --brand-deep: #0d3b72;
 
-  --text: #ffffff;
-  --foreground: #ffffff;
-  --text-muted: #8a8a8a;
-  --text-dim: #4a4a4a;
+  --text: #000000;
+  --foreground: #000000;
+  --text-muted: #6b7280;
+  --text-dim: #9ca3af;
 
   /* Chat panel (white interior) */
   --chat-panel-bg: #ffffff;

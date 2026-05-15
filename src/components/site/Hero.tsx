@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Zap } from "lucide-react";
 import { chatStore } from "@/components/chatbot/chatStore";
 
-const HEADING_LINES = ["Engineering the", "Connected World."];
+const HEADING_LINES = ["Bridging hardware", "& intelligence."];
 
 function HexMesh() {
   // Decorative SVG: hex nodes with pulsing connection lines
@@ -32,7 +32,7 @@ function HexMesh() {
   return (
     <svg
       viewBox="0 0 460 420"
-      className="w-full h-full max-w-[520px] mx-auto opacity-90"
+        className="w-full h-full max-w-[520px] mx-auto opacity-60"
       fill="none"
     >
       {lines.map(([a, b], i) => (
@@ -43,10 +43,10 @@ function HexMesh() {
           x2={nodes[b].x}
           y2={nodes[b].y}
           stroke="#48a0f8"
-          strokeWidth="1"
-          strokeOpacity="0.35"
+          strokeWidth="3"
+          strokeOpacity="0.5"
           initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1, opacity: [0.15, 0.45, 0.15] }}
+          animate={{ pathLength: 1, opacity: [0.3, 0.7, 0.3] }}
           transition={{
             pathLength: { duration: 1.2, delay: i * 0.08 },
             opacity: { duration: 3, repeat: Infinity, delay: i * 0.2 },
@@ -91,7 +91,7 @@ function hexPoints(cx: number, cy: number, r: number) {
 
 export function Hero() {
   return (
-    <section className="relative min-h-screen flex items-center pt-[68px] dot-grid">
+    <section className="relative min-h-screen flex items-center pt-[68px] bg-white">
       <div className="max-w-7xl mx-auto px-6 md:px-12 grid lg:grid-cols-2 gap-12 items-center w-full">
         <div>
           <motion.div
@@ -109,7 +109,7 @@ export function Hero() {
             IoT · CleanTech · Smart Embedded
           </motion.div>
 
-          <h1 className="font-display font-extrabold text-white mt-6 text-[44px] md:text-[64px] lg:text-[72px] leading-[1.05]">
+          <h1 className="font-sans font-bold text-black mt-6 text-[44px] md:text-[64px] lg:text-[72px] leading-[1.05] tracking-tight">
             {HEADING_LINES.map((line, li) => (
               <div key={li} className="overflow-hidden">
                 {line.split(" ").map((w, wi) => (
@@ -135,7 +135,7 @@ export function Hero() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.6 }}
-            className="mt-6 text-[17px] md:text-[18px] text-[#8a8a8a] max-w-[560px] leading-relaxed"
+            className="mt-6 text-[17px] md:text-[18px] text-black/60 max-w-[560px] leading-relaxed"
           >
             Hivericks is a team of passionate engineers creating solutions that make
             processes simpler, data more accessible, and complex problem solving more
@@ -168,7 +168,7 @@ export function Hero() {
                 boxShadow: "0 0 24px rgba(72,160,248,0.35)",
               }}
             >
-              Check If Your Concept Is Possible →
+              Check Feasibility →
             </button>
           </motion.div>
         </div>

@@ -34,13 +34,14 @@ function TechTag({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function Projects() {
+export function Projects({ dark }: { dark?: boolean }) {
   const { ref, visible } = useScrollAnimation<HTMLDivElement>(0.05);
   return (
     <Section
       id="projects"
       label="04 / PROJECTS"
       heading="What We've Built"
+      dark={dark}
       intro={
         <p>
           Every project we ship is proof of our belief: that smart technology and
@@ -56,8 +57,7 @@ export function Projects() {
           transition={{ duration: 0.6 }}
           className="p-8 md:p-10 rounded-2xl"
           style={{
-            background:
-              "linear-gradient(135deg, rgba(72,160,248,0.08) 0%, #141414 60%)",
+            background: "#141414",
             border: "1px solid rgba(72,160,248,0.25)",
           }}
         >

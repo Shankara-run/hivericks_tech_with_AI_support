@@ -35,6 +35,12 @@ type Phase =
   | "idea_funnel"
   | "lead_capture_name"
   | "lead_capture_email"
+  | "contact_form_fname"
+  | "contact_form_lname"
+  | "contact_form_email"
+  | "contact_form_phone"
+  | "contact_form_subject"
+  | "contact_form_message"
   | "closing";
 
 const SCOPE_KEYWORDS = [
@@ -63,21 +69,21 @@ Or if you have a concept in mind, I can help you explore whether it's something 
 What would you like to know?`;
 
 const GREETING_CHIPS: Chip[] = [
-  { label: "💡 What does Hivericks do?" },
-  { label: "⚡ What tech do you work with?" },
-  { label: "🏆 Show me your projects" },
-  { label: "🔍 Check if my concept is possible", silent: true, action: "scope_check" },
+  { label: "About Hivericks" },
+  { label: "Technologies we use" },
+  { label: "Past projects" },
+  { label: "Check project feasibility", silent: true, action: "scope_check" },
 ];
 
-const SCOPE_OPENER = `Great — let's explore this together! 🔍
+const SCOPE_OPENER = `A few quick questions to understand your idea.
 
-Think of this as a quick capability check, not a pitch. I'll ask you a few questions, and we'll figure out together if what you have in mind is something Hivericks could bring to life.
-
-Completely no pressure — just here to help you find out!
-
-First question: in a sentence or two, what's the core idea or problem you're thinking about?`;
+What's the core idea or problem you're thinking about?`;
 
 const CLOSING_CONTENT = `It was great chatting! If you ever want to explore more — about our work, our tech, or another concept — I'm right here. Have a great day! ⚡`;
+
+const CONTACT_FORM_OPENER = `We'd love to hear from you! Please share your details below.
+
+What's your first name?`;
 
 function uid() {
   return Math.random().toString(36).slice(2, 10);
@@ -120,6 +126,7 @@ export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [phase, setPhase] = useState<Phase>("greeting");
   const [loading, setLoading] = useState(false);
+  const [questionCount, setQuestionCount] = useState(0);
   const initialized = useRef(false);
   const faqCount = useRef(0);
   const leadName = useRef<string | null>(null);
@@ -151,15 +158,37 @@ export function useChat() {
     initialized.current = true;
 
     const wantsScope = chatStore.consumePendingScopeCheck();
+    const wantsContact = chatStore.consumePendingContactForm();
     if (wantsScope) {
       setPhase("scope_check");
+      setQuestionCount(1);
+      apiHistory.current.push({ role: "user", content: "I'd like to check project feasibility." });
       apiHistory.current.push({ role: "assistant", content: SCOPE_OPENER });
       setTimeout(() => {
         setMessages([
           {
             id: uid(),
+            role: "user",
+            content: "Check my project feasibility",
+            ts: Date.now(),
+          },
+          {
+            id: uid(),
             role: "assistant",
             content: SCOPE_OPENER,
+            ts: Date.now(),
+          },
+        ]);
+      }, 400);
+    } else if (wantsContact) {
+      setPhase("contact_form_fname");
+      apiHistory.current.push({ role: "assistant", content: CONTACT_FORM_OPENER });
+      setTimeout(() => {
+        setMessages([
+          {
+            id: uid(),
+            role: "assistant",
+            content: CONTACT_FORM_OPENER,
             ts: Date.now(),
           },
         ]);
@@ -209,7 +238,7 @@ export function useChat() {
       addUser(trimmed);
 
       // Closing keyword check
-      if (detectGoodbye(trimmed) && phase !== "lead_capture_name" && phase !== "lead_capture_email") {
+      if (detectGoodbye(trimmed) && phase !== "lead_capture_name" && phase !== "lead_capture_email" && !phase.startsWith("contact_form")) {
         setPhase("closing");
         setTimeout(() => addBot(CLOSING_CONTENT), 400);
         return;
@@ -234,12 +263,49 @@ export function useChat() {
         setTimeout(
           () =>
             addBot(
-              `You're all set, ${name}! ✅\n\nHere's what happens next:\n\n  1. Our team reviews your Concept Snapshot\n  2. They assess it against our full tech capabilities in detail\n  3. They come back to you with honest thoughts — what's feasible, what might need rethinking, and how we could work together\n\nWe'll reach you at ${trimmed} within 2-3 working days.\n\nThank you for exploring this with us — concepts like yours are exactly why we love building things. 🌱\n\nIs there anything else you'd like to know about Hivericks?`,
-              [
-                { label: "💡 Tell me about your tech" },
-                { label: "🏆 Show me past projects" },
-                { label: "✅ I'm all good!", silent: true, action: "close" },
-              ],
+              `You're all set, ${name}.\n\nYour Concept Snapshot has been received. Our team will review it and reach out to you at ${trimmed} within 2-3 working days.\n\nThank you for exploring this with Hivericks.`,
+            ),
+          500,
+        );
+        return;
+      }
+
+      // Contact form flow handled locally
+      if (phase === "contact_form_fname") {
+        leadName.current = trimmed;
+        setPhase("contact_form_lname");
+        setTimeout(() => addBot(`Thanks, ${trimmed}! What's your last name?`), 400);
+        return;
+      }
+      if (phase === "contact_form_lname") {
+        setPhase("contact_form_email");
+        setTimeout(() => addBot(`Got it. What's your email address?`), 400);
+        return;
+      }
+      if (phase === "contact_form_email") {
+        setPhase("contact_form_phone");
+        setTimeout(() => addBot(`Great. And your phone number?`), 400);
+        return;
+      }
+      if (phase === "contact_form_phone") {
+        setPhase("contact_form_subject");
+        setTimeout(
+          () => addBot(`Thanks! What's the subject or type of inquiry you'd like to discuss?`),
+          400,
+        );
+        return;
+      }
+      if (phase === "contact_form_subject") {
+        setPhase("contact_form_message");
+        setTimeout(() => addBot(`Almost done! Please share your message or describe what you need help with.`), 400);
+        return;
+      }
+      if (phase === "contact_form_message") {
+        setPhase("closing");
+        setTimeout(
+          () =>
+            addBot(
+              `Thank you! Your message has been received. Our team will review it and get back to you within 2-3 working days.\n\nWe appreciate you reaching out to Hivericks!`,
             ),
           500,
         );
@@ -249,6 +315,7 @@ export function useChat() {
       // Detect scope keywords from FAQ/greeting → switch to scope check
       if ((phase === "greeting" || phase === "faq") && detectScopeKeywords(trimmed)) {
         setPhase("scope_check");
+        setQuestionCount(1);
       }
 
       // Otherwise — let the AI respond
@@ -259,35 +326,44 @@ export function useChat() {
       let chips: Chip[] | undefined;
       if (snapshot) {
         chips = [
-          { label: "✅ Looks right — send it!", silent: true, action: "snapshot_confirm" },
-          { label: "✏️ Let me adjust something", silent: true, action: "snapshot_adjust" },
+          { label: "The snapshot looks accurate", silent: true, action: "snapshot_confirm" },
+          { label: "I'd like to make changes", silent: true, action: "snapshot_adjust" },
         ];
       }
 
       addBot(cleanReply || (snapshot ? "Here's what I've put together:" : ""), chips, snapshot ?? undefined);
 
+      if (phase === "scope_check" && questionCount < 4) {
+        setQuestionCount((c) => c + 1);
+      }
       if (phase === "faq") faqCount.current += 1;
     },
-    [addBot, addUser, callAi, loading, phase],
+    [addBot, addUser, callAi, loading, phase, questionCount],
   );
 
   const clickChip = useCallback(
     (chip: Chip) => {
       if (chip.action === "scope_check") {
         setPhase("scope_check");
-        // remove chips from previous bot message
+        setQuestionCount(1);
         setMessages((m) =>
           m.map((msg, i) => (i === m.length - 1 ? { ...msg, chips: undefined } : msg)),
         );
         apiHistory.current.push({
           role: "user",
-          content: "I'd like to check if my concept is possible.",
+          content: "I'd like to check feasibility.",
         });
         apiHistory.current.push({ role: "assistant", content: SCOPE_OPENER });
         setTimeout(
           () =>
             setMessages((m) => [
               ...m,
+              {
+                id: uid(),
+                role: "user",
+                content: "Check my project feasibility",
+                ts: Date.now(),
+              },
               { id: uid(), role: "assistant", content: SCOPE_OPENER, ts: Date.now() },
             ]),
           400,
@@ -300,7 +376,7 @@ export function useChat() {
           m.map((msg, i) => (i === m.length - 1 ? { ...msg, chips: undefined } : msg)),
         );
         const botText = `Brilliant! Our team would love to review this.\n\nJust two quick things so they can reach you:\n\nWhat's your name?`;
-        apiHistory.current.push({ role: "user", content: "Looks right — send it!" });
+        apiHistory.current.push({ role: "user", content: "The snapshot looks accurate." });
         apiHistory.current.push({ role: "assistant", content: botText });
         setTimeout(() => addBot(botText), 400);
         return;
@@ -310,7 +386,7 @@ export function useChat() {
           m.map((msg, i) => (i === m.length - 1 ? { ...msg, chips: undefined } : msg)),
         );
         const botText = `No problem! What would you like to tweak? Just tell me what to change and I'll update the snapshot.`;
-        apiHistory.current.push({ role: "user", content: "Let me adjust something." });
+        apiHistory.current.push({ role: "user", content: "I'd like to make changes." });
         apiHistory.current.push({ role: "assistant", content: botText });
         setTimeout(() => addBot(botText), 400);
         return;
@@ -329,5 +405,5 @@ export function useChat() {
     [addBot, sendUserMessage],
   );
 
-  return { messages, sendUserMessage, clickChip, loading };
+  return { messages, sendUserMessage, clickChip, loading, questionCount };
 }

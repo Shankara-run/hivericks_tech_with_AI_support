@@ -27,7 +27,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Smart IoT, CleanTech & embedded systems built in Chennai. Talk to Hive to check if your concept is possible.",
+          "Smart IoT, CleanTech & embedded systems built in Chennai. Talk to Hive to check feasibility.",
       },
     ],
   }),
@@ -51,10 +51,10 @@ function Home() {
         <Navbar />
         <main>
           <Hero />
-          <Vision />
+          <Vision dark />
           <Technology />
-          <Competency />
-          <Projects />
+          <Competency dark />
+          <Projects dark />
         </main>
         <Footer />
       </motion.div>

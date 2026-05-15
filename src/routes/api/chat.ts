@@ -9,8 +9,6 @@ const ERROR_REPLIES = {
   generic: "Something went wrong on my end. Try again in a moment?",
   timeout: "I'm having a slow moment. Send that again?",
   empty: "Hmm, couldn't form a reply. Could you try rephrasing?",
-  credits:
-    "We've used up our AI credits for now — please ping the team at team@hivericks.com and they'll follow up.",
 };
 
 export const Route = createFileRoute("/api/chat")({
@@ -29,12 +27,31 @@ export const Route = createFileRoute("/api/chat")({
           return Response.json({ reply: ERROR_REPLIES.empty }, { status: 200 });
         }
 
-        const apiKey = process.env.LOVABLE_API_KEY;
+        let apiKey = process.env.OPENAI_API_KEY;
+        if (!apiKey) {
+          try {
+            const fs = await import("fs");
+            const path = await import("path");
+            const varsPath = path.resolve(process.cwd(), ".dev.vars");
+            const content = fs.readFileSync(varsPath, "utf-8");
+            for (const line of content.split("\n")) {
+              const trimmed = line.trim();
+              if (trimmed && !trimmed.startsWith("#")) {
+                const eqIdx = trimmed.indexOf("=");
+                if (eqIdx > 0) {
+                  const key = trimmed.slice(0, eqIdx).trim();
+                  const val = trimmed.slice(eqIdx + 1).trim();
+                  if (key === "OPENAI_API_KEY") apiKey = val;
+                }
+              }
+            }
+          } catch {}
+        }
         if (!apiKey) {
           return Response.json(
             {
               reply:
-                "Lovable AI isn't configured yet. Enable Lovable AI in Cloud settings to power Hive.",
+                "AI isn't configured yet. Set OPENAI_API_KEY in your environment to power Hive.",
             },
             { status: 200 },
           );
@@ -50,19 +67,17 @@ export const Route = createFileRoute("/api/chat")({
           const timeout = setTimeout(() => controller.abort(), 25_000);
 
           const upstream = await fetch(
-            "https://ai.gateway.lovable.dev/v1/chat/completions",
+            "https://api.openai.com/v1/chat/completions",
             {
               method: "POST",
               headers: {
                 Authorization: `Bearer ${apiKey}`,
                 "Content-Type": "application/json",
-                "X-Lovable-AIG-SDK": "fetch",
               },
               body: JSON.stringify({
-                model: "google/gemini-3-flash-preview",
+                model: "gpt-5-nano",
                 messages,
-                temperature: 0.72,
-                max_tokens: 600,
+                max_completion_tokens: 4096,
               }),
               signal: controller.signal,
             },
@@ -71,9 +86,6 @@ export const Route = createFileRoute("/api/chat")({
 
           if (upstream.status === 429) {
             return Response.json({ reply: ERROR_REPLIES.rate }, { status: 200 });
-          }
-          if (upstream.status === 402) {
-            return Response.json({ reply: ERROR_REPLIES.credits }, { status: 200 });
           }
           if (!upstream.ok) {
             return Response.json({ reply: ERROR_REPLIES.generic }, { status: 200 });

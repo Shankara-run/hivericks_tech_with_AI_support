@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { HivericksLogo } from "@/components/HivericksLogo";
 import { chatStore } from "@/components/chatbot/chatStore";
 
@@ -10,22 +9,13 @@ const NAV = [
 ];
 
 export function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 60);
-    onScroll();
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
   return (
     <nav
-      className="fixed top-0 left-0 right-0 z-50 h-[68px] flex items-center px-6 md:px-12 transition-all"
+      className="fixed top-0 left-0 right-0 z-50 h-[68px] flex items-center px-6 md:px-12"
       style={{
-        background: scrolled ? "rgba(10,10,10,0.92)" : "transparent",
-        backdropFilter: scrolled ? "blur(16px)" : "none",
-        borderBottom: scrolled ? "1px solid rgba(255,255,255,0.06)" : "1px solid transparent",
+        background: "rgba(10,10,10,0.95)",
+        backdropFilter: "blur(16px)",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
       }}
     >
       <a href="#" className="flex items-center">
@@ -51,8 +41,8 @@ export function Navbar() {
           boxShadow: "0 0 20px rgba(72,160,248,0.25)",
         }}
       >
-        <span className="hidden sm:inline">Check If Your Concept Is Possible </span>
-        <span className="sm:hidden">Check Concept </span>→
+        <span className="hidden sm:inline">Check Feasibility </span>
+        <span className="sm:hidden">Check Feasibility </span>→
       </button>
     </nav>
   );

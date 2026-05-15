@@ -21,13 +21,14 @@ const CARDS = [
   },
 ];
 
-export function Vision() {
+export function Vision({ dark }: { dark?: boolean }) {
   const { ref, visible } = useScrollAnimation<HTMLDivElement>(0.1);
   return (
     <Section
       id="vision"
       label="01 / VISION"
       heading="Partners, Not Just Clients"
+      dark={dark}
       intro={
         <div className="space-y-4">
           <p>

@@ -22,13 +22,14 @@ const AWARDS = [
   "Incubated: TREC-STEP · AIC RAISE · NSRCEL · Microsoft for Startups · AWS",
 ];
 
-export function Competency() {
+export function Competency({ dark }: { dark?: boolean }) {
   const { ref, visible } = useScrollAnimation<HTMLDivElement>(0.1);
   return (
     <Section
       id="competency"
       label="03 / COMPETENCY"
       heading="What We're Exceptionally Good At"
+      dark={dark}
       intro={
         <p>
           Our team brings together hardware engineers, firmware developers, IoT
@@ -42,7 +43,7 @@ export function Competency() {
           {BARS.map((b, i) => (
             <div key={b.label}>
               <div className="flex items-baseline justify-between mb-2">
-                <span className="text-[14.5px] text-white/85 font-medium">{b.label}</span>
+                <span className="text-[14.5px] text-black font-medium">{b.label}</span>
                 <span className="text-[13px] text-[#48a0f8] font-mono">{b.value}%</span>
               </div>
               <div className="h-1.5 bg-[#1c1c1c] rounded-full overflow-hidden">

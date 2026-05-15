@@ -36,13 +36,18 @@ const CARDS = [
   },
 ];
 
-export function Technology() {
+type TechProps = {
+  dark?: boolean;
+};
+
+export function Technology({ dark }: TechProps) {
   const { ref, visible } = useScrollAnimation<HTMLDivElement>(0.08);
   return (
     <Section
       id="technology"
       label="02 / TECHNOLOGY"
       heading="The Stack Behind the Solutions"
+      dark={dark}
       intro={
         <p>
           We operate at the intersection of hardware intelligence and software
@@ -60,13 +65,16 @@ export function Technology() {
               animate={visible ? { opacity: 1, y: 0 } : {}}
               transition={{ delay: i * 0.07, duration: 0.5 }}
               className="p-7 rounded-xl"
-              style={{ background: "#141414", border: "1px solid #2a2a2a" }}
+              style={{
+                background: dark ? "#141414" : "#f9fafb",
+                border: dark ? "1px solid #2a2a2a" : "1px solid #e5e7eb",
+              }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.borderColor = "rgba(72,160,248,0.4)";
                 e.currentTarget.style.boxShadow = "0 0 24px rgba(72,160,248,0.18)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "#2a2a2a";
+                e.currentTarget.style.borderColor = dark ? "#2a2a2a" : "#e5e7eb";
                 e.currentTarget.style.boxShadow = "none";
               }}
             >
@@ -76,10 +84,12 @@ export function Technology() {
               >
                 <Icon className="w-5 h-5 text-[#48a0f8]" />
               </div>
-              <h3 className="text-white text-[20px] font-semibold font-display mb-2">
+              <h3 className={`text-[20px] font-semibold font-display mb-2 ${dark ? "text-white" : "text-black"}`}>
                 {c.title}
               </h3>
-              <p className="text-[14.5px] text-[#8a8a8a] leading-relaxed">{c.body}</p>
+              <p className={`text-[14.5px] leading-relaxed ${dark ? "text-[#8a8a8a]" : "text-black/60"}`}>
+                {c.body}
+              </p>
             </motion.div>
           );
         })}
